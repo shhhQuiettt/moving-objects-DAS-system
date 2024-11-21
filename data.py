@@ -1,0 +1,32 @@
+from pathlib import Path
+import sys
+import datetime
+import pandas as pd
+import numpy as np
+import glob
+
+
+DATA_FOLDER = "20240507/"
+
+
+def load_from_file(filename: str) -> pd.DataFrame:
+    file_path = Path.joinpath(Path.cwd(), DATA_FOLDER, filename)
+    data = np.load(file_path)
+
+    dx = 5.106500953873407
+    dt = 0.0016
+
+    try:
+        time_start = datetime.datetime.strptime(
+            f"2024-05-07 {filename.split('.')[0]}", "%Y-%m-%d %H%M%S"
+        )
+    except ValueError:
+        print(f"Could not parse filename {filename}, expected format: %H%M%S")
+        sys.exit(1)
+
+    index = pd.date_range(start=time_start, periods=len(data), freq=f"{dt}s")
+
+    columns = np.arange(len(data[0])) * dx
+
+    df = pd.DataFrame(data=data, index=index, columns=columns)
+    return df
