@@ -5,13 +5,8 @@ let
 in pkgs.mkShell {
   packages = [
     #qt
-    pkgs.xcbuild
-    pkgs.xcbutilxrm
-    pkgs.qt5.qtbase
-    pkgs.qt5.qttools
-    pkgs.qt5.qtdeclarative
-    pkgs.qt5.qtquickcontrols
-    pkgs.qt5.qtquickcontrols2
+    #pkgs.jupyter
+
     (pkgs.python3.withPackages (python-pkgs: [
       python-pkgs.pandas
       python-pkgs.matplotlib
@@ -24,6 +19,7 @@ in pkgs.mkShell {
       python-pkgs.scikit-learn
       python-pkgs.pyqt5
     ]))
+    pkgs.jupyter
   ];
 }
 

@@ -1,4 +1,6 @@
 from pathlib import Path
+import numpy.typing as npt
+import matplotlib.pyplot as plt
 import sys
 import datetime
 import pandas as pd
@@ -30,3 +32,15 @@ def load_from_file(filename: str) -> pd.DataFrame:
 
     df = pd.DataFrame(data=data, index=index, columns=columns)
     return df
+
+
+def prepocess(data: npt.NDArray) -> npt.NDArray:
+    data = np.abs(data)
+    low, high = np.percentile(data, [1, 99])
+    data = np.clip(data, low, high)
+
+    data = np.around(
+        255 * (data - np.min(data)) / (np.max(data) - np.min(data))
+    ).astype(np.uint8)
+    return data
+    # print(high, np.max(data))
