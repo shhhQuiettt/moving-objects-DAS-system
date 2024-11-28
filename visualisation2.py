@@ -9,7 +9,16 @@ def plot_numpy(data: npt.NDArray):
     fig = plt.figure(figsize=(12, 16))
 
     ax = plt.axes()
-    ax.imshow(data, aspect="auto", interpolation="none", cmap="gray")
+
+    if len(data.shape) == 2:
+        ax.imshow(
+            data, vmin=0, vmax=255, aspect="auto", interpolation="none", cmap="gray"
+        )
+
+    else:
+        print("gere")
+        ax.imshow(data, aspect="auto", interpolation="none")
+
     # remove axis
     ax.axis("off")
     plt.show()
