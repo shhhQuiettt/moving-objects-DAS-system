@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import matplotlib.pyplot as plt
 import numpy.typing as npt
 from matplotlib.colors import Normalize
@@ -16,9 +17,44 @@ def plot_numpy(data: npt.NDArray):
         )
 
     else:
-        print("gere")
         ax.imshow(data, aspect="auto", interpolation="none")
 
     # remove axis
+    ax.axis("off")
+    plt.show()
+
+
+def plot_numpy_with_lines(
+    data: npt.NDArray, lines: list[tuple[float, float, int, int]]
+):
+    """
+    lines: list of (slope, intercept) tuples
+    """
+    if len(data.shape) == 2:
+        data = cv2.cvtColor(data, cv2.COLOR_GRAY2RGB)
+    fig = plt.figure(figsize=(12, 16))
+
+    ax = plt.axes()
+
+    ax.imshow(data, aspect="auto", interpolation="none")
+
+    for line in lines:
+        slope, intercept, x_min, x_max = line
+        y_min = 0
+        y_max = data.shape[0]
+
+        x = np.arange(x_min, x_max)
+        y = slope * x + intercept
+
+        y_valid_mask = (y >= y_min) & (y < y_max)
+        x_valid_mask = (x > x_min) & (x < x_max)
+
+        valid_mask = y_valid_mask & x_valid_mask
+
+        x = x[valid_mask]
+        y = y[valid_mask]
+
+        ax.plot(x, y, color="red")
+
     ax.axis("off")
     plt.show()
