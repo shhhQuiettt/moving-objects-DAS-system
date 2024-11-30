@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 import cv2
 
@@ -7,11 +8,14 @@ import numpy.typing as npt
 from matplotlib.colors import Normalize
 
 
-def plot_numpy(data: npt.NDArray):
+def plot_numpy(data: npt.NDArray, title: Optional[str] = None):
     # display data but strech it horizontaly
     fig = plt.figure(figsize=(12, 16))
 
     ax = plt.axes()
+
+    if title:
+        plt.title(title)
 
     if len(data.shape) == 2:
         ax.imshow(

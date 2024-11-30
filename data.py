@@ -14,6 +14,35 @@ DX = 5.106500953873407
 DT = 0.0016
 
 
+def _get_test_files():
+    file_start = "090322"
+    file_end = "090512"
+
+    h = file_start[:2]
+    m = file_start[2:4]
+    s = file_start[4:]
+    files = []
+
+    while True:
+        files.append(f"{h}{m}{s}.npy")
+        print(f"{h}{m}{s}")
+        if f"{h}{m}{s}" == file_end:
+            break
+
+        s = str(int(s) + 10).zfill(2)
+        if int(s) >= 60:
+            s = str(int(s) % 60).zfill(2)
+            m = str(int(m) + 1).zfill(2)
+        if int(m) >= 60:
+            m = str(int(m) % 60).zfill(2)
+            h = str(int(h) + 1).zfill(2)
+
+    return files
+
+
+TEST_FILES = _get_test_files()
+
+
 def velocity_from_slope(slope: float) -> float:
     """
     Velocity in m/s
@@ -48,6 +77,12 @@ def load_from_file(filename: str) -> pd.DataFrame:
 
     df = pd.DataFrame(data=data, index=index, columns=columns)
     return df
+
+
+def load_all_files() -> list[pd.DataFrame]:
+    file_pahts = [Path.joinpath(Path.cwd(), DATA_FOLDER, file) for file in TEST_FILES]
+
+    return [load_from_file(file) for file in TEST_FILES]
 
 
 def prepocess(data: npt.NDArray) -> npt.NDArray:
