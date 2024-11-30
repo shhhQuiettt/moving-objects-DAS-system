@@ -1,3 +1,5 @@
+from collections.abc import Generator
+from typing import Iterator
 from pathlib import Path
 import numpy.typing as npt
 import matplotlib.pyplot as plt
@@ -79,10 +81,8 @@ def load_from_file(filename: str) -> pd.DataFrame:
     return df
 
 
-def load_all_files() -> list[pd.DataFrame]:
-    file_pahts = [Path.joinpath(Path.cwd(), DATA_FOLDER, file) for file in TEST_FILES]
-
-    return [load_from_file(file) for file in TEST_FILES]
+def load_all_files() -> Iterator[pd.DataFrame]:
+    yield from (load_from_file(filename) for filename in TEST_FILES)
 
 
 def prepocess(data: npt.NDArray) -> npt.NDArray:
