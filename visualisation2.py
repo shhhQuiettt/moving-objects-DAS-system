@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+
+from data import DX, DT
 import matplotlib.pyplot as plt
 import numpy.typing as npt
 from matplotlib.colors import Normalize
@@ -36,6 +38,21 @@ def plot_numpy_with_lines(
 
     ax = plt.axes()
 
+    plt.ylabel("Time [s]")
+    plt.xlabel("Position [m]")
+
+    nx = data.shape[1]
+    step_x = int(nx / 6)
+    x_positions = np.arange(0, nx, step_x)
+    x_labels = np.arange(0, nx, step_x) * DX
+    ax.set_xticks(x_positions, np.round(x_labels))
+
+    ny = data.shape[0]
+    step_y = int(ny / 6)
+    y_positions = np.arange(0, ny, step_y)
+    y_labels = np.arange(0, ny, step_y) * DT
+    ax.set_yticks(y_positions, np.round(y_labels))
+
     ax.imshow(data, aspect="auto", interpolation="none")
 
     for line in lines:
@@ -56,5 +73,4 @@ def plot_numpy_with_lines(
 
         ax.plot(x, y, color="red")
 
-    ax.axis("off")
     plt.show()

@@ -10,6 +10,22 @@ import glob
 
 DATA_FOLDER = "20240507/"
 
+DX = 5.106500953873407
+DT = 0.0016
+
+
+def velocity_from_slope(slope: float) -> float:
+    """
+    Velocity in m/s
+
+    Because on the x-axis we have space not time, we need to use the inverse of the slope.
+    """
+    return round(abs(1 / slope) * DX / DT, 2)
+
+
+def mps_to_kmph(velocity: float) -> float:
+    return round(velocity * (3.6), 2)
+
 
 def load_from_file(filename: str) -> pd.DataFrame:
     file_path = Path.joinpath(Path.cwd(), DATA_FOLDER, filename)
