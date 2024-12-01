@@ -19,6 +19,9 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
     if verbose:
         plot_numpy(img, title="Original image")
 
+    img = cv2.fastNlMeansDenoising(img, templateWindowSize=7, searchWindowSize=21, h=14)
+    if verbose:
+        plot_numpy(img, title="Denoised image")
     # Gaussian blur
     img = cv2.GaussianBlur(img, (5, 5), 0)
     # Thresholding the image
@@ -75,9 +78,9 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
         r2 = model.score(x_coords, y_coords)
 
         # Discarding objects with R2 < 0.6
-        if r2 < 0.6:
+        if r2 < 0.5:
             if verbose:
-                print(f"Discarded cluster {cluster_id} with R2={r2} (<0.6)")
+                print(f"Discarded cluster {cluster_id} with R2={r2} (<0.5)")
             continue
 
         velocity = velocity_from_slope(slope)
