@@ -1,4 +1,5 @@
 import cv2
+import numpy.typing as npt
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -32,3 +33,32 @@ def generate_colors(num_colors: int) -> np.ndarray:
     rgb_colors = (np.array(rgb_colors) * 255).astype(np.uint8)
     np.random.shuffle(rgb_colors)
     return rgb_colors
+
+
+def to_frequency_domain(image: npt.NDArray) -> npt.NDArray:
+    return np.fft.fftshift(np.fft.fft2(image))
+
+
+def to_spatial_domain(image: npt.NDArray) -> npt.NDArray:
+    return np.fft.ifft2(np.fft.ifftshift(image)).real.astype(np.uint8)
+
+
+def get_mask(shape: tuple[int, int], freq_fraction: float):
+    mask = np.zeros(shape, np.float32)
+    return cv2.circle(
+        mask, (shape[0] // 2, shape[1] // 2), int(min(shape) * freq_fraction), 1, -1
+    )
+
+
+def frequency_lowpass(image: npt.NDArray, freq_fraction: float):
+    image_freq = to_frequency_domain(image)
+    mask = get_mask(image_freq.shape, freq_fraction)
+
+    return to_spatial_domain(image_freq * mask)
+
+
+def frequency_highpass(image: npt.NDArray, freq_fraction: float):
+    image_freq = to_frequency_domain(image)
+    mask = get_mask(image_freq.shape, freq_fraction)
+
+    return to_spatial_domain(image_freq * (1 - mask))
