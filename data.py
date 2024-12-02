@@ -17,8 +17,11 @@ DT = 0.0016
 
 
 def _get_test_files():
-    file_start = "090322"
-    file_end = "090512"
+    # file_start = "090322"
+    # file_end = "090512"
+
+    file_start = "091722"
+    file_end = "091912"
 
     h = file_start[:2]
     m = file_start[2:4]
@@ -27,7 +30,7 @@ def _get_test_files():
 
     while True:
         files.append(f"{h}{m}{s}.npy")
-        print(f"{h}{m}{s}")
+        # print(f"{h}{m}{s}")
         if f"{h}{m}{s}" == file_end:
             break
 
@@ -38,11 +41,33 @@ def _get_test_files():
         if int(m) >= 60:
             m = str(int(m) % 60).zfill(2)
             h = str(int(h) + 1).zfill(2)
+    
+    # file_start = "091822"
+    # file_end = "092012"
+
+    # h = file_start[:2]
+    # m = file_start[2:4]
+    # s = file_start[4:]
+    # # files = []
+
+    # while True:
+    #     files.append(f"{h}{m}{s}.npy")
+    #     # print(f"{h}{m}{s}")
+    #     if f"{h}{m}{s}" == file_end:
+    #         break
+
+    #     s = str(int(s) + 10).zfill(2)
+    #     if int(s) >= 60:
+    #         s = str(int(s) % 60).zfill(2)
+    #         m = str(int(m) + 1).zfill(2)
+    #     if int(m) >= 60:
+    #         m = str(int(m) % 60).zfill(2)
+    #         h = str(int(h) + 1).zfill(2)
 
     return files
 
 
-# TEST_FILES = _get_test_files()
+TEST_FILES = _get_test_files()
 
 
 def velocity_from_slope(slope: float) -> float:

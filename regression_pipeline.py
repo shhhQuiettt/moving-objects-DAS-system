@@ -53,7 +53,7 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
     if verbose:
         plot_numpy(img, title="Opened image")
 
-    img = cv2.resize(img, (w, h), interpolation=cv2.INTER_NEAREST)
+    # img = cv2.resize(img, (w, h), interpolation=cv2.INTER_NEAREST)
 
     X = np.nonzero(img)
     X = np.vstack(X).T

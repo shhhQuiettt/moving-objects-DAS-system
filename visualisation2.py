@@ -8,8 +8,10 @@ import numpy.typing as npt
 from matplotlib.colors import Normalize
 
 
-def plot_numpy(data: npt.NDArray, title: Optional[str] = None):
+def plot_numpy(data: npt.NDArray, title: Optional[str] = None, save: bool = False):
     # display data but strech it horizontaly
+    # import matplotlib
+    # matplotlib.use('Agg')
     fig = plt.figure(figsize=(12, 16))
 
     ax = plt.axes()
@@ -24,14 +26,19 @@ def plot_numpy(data: npt.NDArray, title: Optional[str] = None):
 
     else:
         ax.imshow(data, aspect="auto", interpolation="none")
-
+    # print("elo")
     # remove axis
     ax.axis("off")
     plt.show()
+    # if save:
+    #     plt.savefig("./image/"+title+".png")
+    # else:
+    #     plt.show()
+    # plt.close(fig)
 
 
 def plot_numpy_with_lines(
-    data: npt.NDArray, lines: list[tuple[float, float, int, int]]
+    data: npt.NDArray, lines: list[tuple[float, float]]
 ):
     """
     lines: list of (slope, intercept) tuples

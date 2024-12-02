@@ -41,7 +41,7 @@ def pipeline_processing(img):
     img_i = cv2.morphologyEx(
         img_i,
         cv2.MORPH_OPEN,
-        cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)),
+        cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)),
         iterations=1,
     )
     return img_i
@@ -56,11 +56,11 @@ def clustering(img):
     X.shape
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X)
-    clustering = DBSCAN(eps=0.08, min_samples=300).fit(X_scaled)
+    clustering = DBSCAN(eps=0.08, min_samples=300,metric="manhattan").fit(X_scaled)
 
     no_of_clusters = np.max(clustering.labels_)+1
     # print(no_of_clusters)
-    return no_of_clusters
+    return no_of_clusters, X, clustering
 
 def generate_colors(num_colors):
     hsv_colors = [(i / num_colors, 1.0, 1.0) for i in range(num_colors)]
