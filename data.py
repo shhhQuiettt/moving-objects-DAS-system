@@ -42,7 +42,7 @@ def _get_test_files():
     return files
 
 
-TEST_FILES = _get_test_files()
+# TEST_FILES = _get_test_files()
 
 
 def velocity_from_slope(slope: float) -> float:
