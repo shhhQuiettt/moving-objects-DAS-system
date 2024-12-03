@@ -34,8 +34,25 @@ def generate_colors(num_colors: int) -> np.ndarray:
     np.random.shuffle(rgb_colors)
     return rgb_colors
 
-def pipeline_processing(img):
 
+def pipeline_processing2(img):
+    img = cv2.fastNlMeansDenoising(img, templateWindowSize=7, searchWindowSize=21, h=14)
+
+    img = cv2.blur(img, (3, 41))
+
+    img = cv2.morphologyEx(
+        img,
+        cv2.MORPH_ERODE,
+        cv2.getStructuringElement(cv2.MORPH_RECT, (3, 9)),
+        iterations=1,
+    )
+
+    _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    return img
+
+
+def pipeline_processing(img):
     img_g = cv2.GaussianBlur(img, (5, 5), 0)
     tr, img_i = cv2.threshold(img_g, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     img_i = cv2.morphologyEx(
@@ -45,6 +62,7 @@ def pipeline_processing(img):
         iterations=1,
     )
     return img_i
+
 
 def clustering(img):
     from sklearn.cluster import DBSCAN
@@ -56,11 +74,12 @@ def clustering(img):
     X.shape
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X)
-    clustering = DBSCAN(eps=0.08, min_samples=300,metric="manhattan").fit(X_scaled)
+    clustering = DBSCAN(eps=0.08, min_samples=300, metric="manhattan").fit(X_scaled)
 
-    no_of_clusters = np.max(clustering.labels_)+1
+    no_of_clusters = np.max(clustering.labels_) + 1
     # print(no_of_clusters)
     return no_of_clusters, X, clustering
+
 
 def generate_colors(num_colors):
     hsv_colors = [(i / num_colors, 1.0, 1.0) for i in range(num_colors)]
@@ -68,6 +87,7 @@ def generate_colors(num_colors):
     rgb_colors = (np.array(rgb_colors) * 255).astype(np.uint8)
     np.random.shuffle(rgb_colors)
     return rgb_colors
+
 
 def to_frequency_domain(image: npt.NDArray) -> npt.NDArray:
     return np.fft.fftshift(np.fft.fft2(image))
