@@ -1,80 +1,108 @@
+from typing import Optional
+import numpy as np
+import cv2
+
+from data import DX, DT
 import matplotlib.pyplot as plt
 import numpy.typing as npt
-import numpy as np
 from matplotlib.colors import Normalize
 
 
-def set_axis(x, no_labels=7) -> tuple[np.array, np.array]:
-    """Sets the x-axis positions and labels for a plot.
+def plot_numpy(
+    *args: npt.NDArray,
+    title: Optional[str] = None,
+    save: bool = False,
+):
 
-    Args:
-        x (np.array): The x-axis data.
-        no_labels (int, optional): The number of labels to display. Defaults to 7.
+    data = np.concatenate(
+        [
+            img if len(img.shape) == 3 else cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            for img in args
+        ],
+        axis=1,
+    )
+    print(data.shape)
 
-    Returns:
-        tuple[np.array, np.array]: A tuple containing:
-            - The positions of the labels on the x-axis.
-            - The labels themselves.
-    """
-    nx = x.shape[0]
-    step_x = int(nx / (no_labels - 1))
-    x_positions = np.arange(0, nx, step_x)
-    x_labels = x[::step_x]
-    return x_positions, x_labels
+    # cv2.circle(
+    #     data,
+    #     (data.shape[1] // 2, data.shape[0] // 2),
+    #     400,
+    #     (0, 0, 255),
+    #     thickness=-1,
+    # )
+    # display data but strech it horizontaly
+    # import matplotlib
+    # matplotlib.use('Agg')
+    fig = plt.figure(figsize=(6 * len(args), 8))
 
-
-def plot_timeframe(df):
-    fig = plt.figure(figsize=(12, 16))
     ax = plt.axes()
 
-    # This is an example transformation and should be converted to the proper algorithm
-    df -= df.mean()
-    df = np.abs(df)
-    low, high = np.percentile(df, [3, 99])
-    norm = Normalize(vmin=low, vmax=high, clip=True)
+    if title:
+        plt.title(title)
 
-    im = ax.imshow(df, interpolation="none", aspect="auto", norm=norm)
-    plt.ylabel("time")
-    plt.xlabel("space [m]")
+    # if len(data.shape) == 2:
+    #     ax.imshow(
+    #         data, vmin=0, vmax=255, aspect="auto", interpolation="none"  # , cmap="gray"
+    #     )
 
-    cax = fig.add_axes(
-        [
-            ax.get_position().x1 + 0.06,
-            ax.get_position().y0,
-            0.02,
-            ax.get_position().height,
-        ]
-    )
-    plt.colorbar(im, cax=cax)
-    x_positions, x_labels = set_axis(df.columns)
-    ax.set_xticks(x_positions, np.round(x_labels))
-    y_positions, y_labels = set_axis(df.index.time)
-    ax.set_yticks(y_positions, y_labels)
+    # else:
+    ax.imshow(data, aspect="auto", interpolation="none")
+    # print("elo")
+    # remove axis
+    ax.axis("off")
     plt.show()
-    # save plot to file
+    # if save:
+    #     plt.savefig("./image/"+title+".png")
+    # else:
+    #     plt.show()
+    # plt.close(fig)
 
 
-def plot_numpy(arr: npt.NDArray):
-
+def plot_numpy_with_lines(
+    data: npt.NDArray, lines: list[tuple[float, float, int, int]]
+):
+    """
+    lines: list of (slope, intercept) tuples
+    """
+    if len(data.shape) == 2:
+        data = cv2.cvtColor(data, cv2.COLOR_GRAY2RGB)
     fig = plt.figure(figsize=(12, 16))
+
     ax = plt.axes()
 
-    arr -= arr.mean()
-    arr = np.abs(arr)
-    low, high = np.percentile(arr, [3, 99])
-    norm = Normalize(vmin=low, vmax=high, clip=True)
+    plt.ylabel("Time [s]")
+    plt.xlabel("Position [m]")
 
-    im = ax.imshow(arr, interpolation="none", aspect="auto", norm=norm)
-    plt.ylabel("time")
-    plt.xlabel("space [m]")
+    nx = data.shape[1]
+    step_x = int(nx / 6)
+    x_positions = np.arange(0, nx, step_x)
+    x_labels = np.arange(0, nx, step_x) * DX
+    ax.set_xticks(x_positions, np.round(x_labels))
 
-    cax = fig.add_axes(
-        [
-            ax.get_position().x1 + 0.06,
-            ax.get_position().y0,
-            0.02,
-            ax.get_position().height,
-        ]
-    )
-    plt.colorbar(im, cax=cax)
+    ny = data.shape[0]
+    step_y = int(ny / 6)
+    y_positions = np.arange(0, ny, step_y)
+    y_labels = np.arange(0, ny, step_y) * DT
+    ax.set_yticks(y_positions, np.round(y_labels))
+
+    ax.imshow(data, aspect="auto", interpolation="none")
+
+    for line in lines:
+        slope, intercept, x_min, x_max = line
+        y_min = 0
+        y_max = data.shape[0]
+
+        x = np.arange(x_min, x_max)
+        y = slope * x + intercept
+
+        y_valid_mask = (y >= y_min) & (y < y_max)
+        x_valid_mask = (x > x_min) & (x < x_max)
+
+        valid_mask = y_valid_mask & x_valid_mask
+
+        x = x[valid_mask]
+        y = y[valid_mask]
+
+        ax.plot(x, y, color="red")
+
     plt.show()

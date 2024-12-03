@@ -36,6 +36,14 @@ def generate_colors(num_colors: int) -> np.ndarray:
 
 
 def pipeline_processing2(img):
+    img = np.abs(img)
+    low, high = np.percentile(img, [1, 99])
+    img = np.clip(img, low, high)
+
+    img = np.around(255 * (img - np.min(img)) / (np.max(img) - np.min(img))).astype(
+        np.uint8
+    )
+    # print(high, np.max(data))
     img = cv2.fastNlMeansDenoising(img, templateWindowSize=7, searchWindowSize=21, h=14)
 
     img = cv2.blur(img, (3, 41))

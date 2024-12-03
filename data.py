@@ -122,6 +122,7 @@ def load_all_files() -> Iterator[pd.DataFrame]:
 
 
 def prepocess(data: npt.NDArray) -> npt.NDArray:
+    raise ValueError("Delete this")
     data = np.abs(data)
     low, high = np.percentile(data, [1, 99])
     data = np.clip(data, low, high)
