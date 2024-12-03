@@ -38,7 +38,7 @@ def plot_numpy(data: npt.NDArray, title: Optional[str] = None, save: bool = Fals
 
 
 def plot_numpy_with_lines(
-    data: npt.NDArray, lines: list[tuple[float, float]]
+    data: npt.NDArray, lines: list[tuple[float, float, int, int]]
 ):
     """
     lines: list of (slope, intercept) tuples
