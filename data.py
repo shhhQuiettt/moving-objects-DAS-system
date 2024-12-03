@@ -17,11 +17,11 @@ DT = 0.0016
 
 
 def _get_test_files():
-    # file_start = "090322"
-    # file_end = "090512"
+    file_start = "090322"
+    file_end = "090512"
 
-    file_start = "091722"
-    file_end = "091912"
+    # file_start = "091722"
+    # file_end = "091912"
 
     h = file_start[:2]
     m = file_start[2:4]
@@ -41,7 +41,7 @@ def _get_test_files():
         if int(m) >= 60:
             m = str(int(m) % 60).zfill(2)
             h = str(int(h) + 1).zfill(2)
-    
+
     # file_start = "091822"
     # file_end = "092012"
 
