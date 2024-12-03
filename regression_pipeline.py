@@ -29,8 +29,8 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
 
     img = cv2.blur(img, (3, 41))
     # img = cv2.GaussianBlur(img, (3, 3), 0)
-    if verbose:
-        plot_numpy(img, title="Blurred image")
+    # if verbose:
+    #     plot_numpy(img, title="Blurred image")
 
     img = cv2.morphologyEx(
         img,
@@ -50,8 +50,8 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
     #     iterations=1,
     # )
 
-    if verbose:
-        plot_numpy(img, title="Opened image")
+    # if verbose:
+    #     plot_numpy(img, title="Opened image")
 
     # img = cv2.resize(img, (w, h), interpolation=cv2.INTER_NEAREST)
 
@@ -114,4 +114,4 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
     if verbose:
         plot_numpy_with_lines(img, lines)
 
-    return velocities
+    # return velocities
