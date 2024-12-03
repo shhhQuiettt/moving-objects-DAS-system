@@ -5,7 +5,7 @@ import numpy.typing as npt
 from image_processing import generate_colors
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import MinMaxScaler
-from visualisation2 import plot_numpy
+from visualisation import plot_numpy
 from data import velocity_from_slope
 
 

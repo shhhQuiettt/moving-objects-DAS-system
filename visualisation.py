@@ -21,18 +21,6 @@ def plot_numpy(
         ],
         axis=1,
     )
-    print(data.shape)
-
-    # cv2.circle(
-    #     data,
-    #     (data.shape[1] // 2, data.shape[0] // 2),
-    #     400,
-    #     (0, 0, 255),
-    #     thickness=-1,
-    # )
-    # display data but strech it horizontaly
-    # import matplotlib
-    # matplotlib.use('Agg')
     fig = plt.figure(figsize=(6 * len(args), 8))
 
     ax = plt.axes()
@@ -40,22 +28,29 @@ def plot_numpy(
     if title:
         plt.title(title)
 
-    # if len(data.shape) == 2:
-    #     ax.imshow(
-    #         data, vmin=0, vmax=255, aspect="auto", interpolation="none"  # , cmap="gray"
-    #     )
+    plt.ylabel("Time [s]")
+    plt.xlabel("Position [m]")
 
-    # else:
+    if len(args) == 1:
+        nx = data.shape[1]
+        step_x = int(nx / 6)
+        x_positions = np.arange(0, nx, step_x)
+        x_labels = np.arange(0, nx, step_x) * DX
+        ax.set_xticks(x_positions, np.round(x_labels))
+
+        ny = data.shape[0]
+        step_y = int(ny / 6)
+        y_positions = np.arange(0, ny, step_y)
+        y_labels = np.arange(0, ny, step_y) * DT
+        ax.set_yticks(y_positions, np.round(y_labels))
+
     ax.imshow(data, aspect="auto", interpolation="none")
-    # print("elo")
-    # remove axis
     ax.axis("off")
-    plt.show()
-    # if save:
-    #     plt.savefig("./image/"+title+".png")
-    # else:
-    #     plt.show()
-    # plt.close(fig)
+    if save:
+        plt.savefig("./image/" + title + ".png")
+        plt.close(fig)
+    else:
+        plt.show()
 
 
 def plot_numpy_with_lines(

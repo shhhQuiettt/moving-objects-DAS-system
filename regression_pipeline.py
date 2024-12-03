@@ -1,5 +1,5 @@
 import numpy as np
-from visualisation2 import plot_numpy, plot_numpy_with_lines
+from visualisation import plot_numpy, plot_numpy_with_lines
 import pandas as pd
 import cv2
 import matplotlib.pyplot as plt

@@ -4,8 +4,6 @@ title: "DAS Traffic Analysis"
 
 ```{python echo=FALSE}
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import cv2
 from sklearn.cluster import DBSCAN
@@ -70,7 +68,7 @@ plt.show()
 
 ```{python }
 high = np.percentile(img, 99)
-img = np.minimum(img, high)
+img = np.maximum(img, high)
 
 plt.title("Data distribution after removing outliers")
 plt.hist(img.flatten(), bins=100)
@@ -227,7 +225,7 @@ aspect_ratio = 12 / 16
 h, w = img.shape
 ```
 
-Because our data is very narrow (```python w```) and the lines are visible on the streched image, it makes sense to resize the date, so the `HoughLines` algorithm has more freedom in term of slope selection
+Because our data is very narrow (`{python print(f"{w} x {h}")}`) and the lines are visible on the streched image, it makes sense to resize the date, so the `HoughLines` algorithm has more freedom in term of slope selection
 ```{python}
 aspect_ratio = 12 / 16
 h, w = img.shape
@@ -238,7 +236,6 @@ img = cv2.resize(img, (new_w, h), interpolation=cv2.INTER_NEAREST)
 
 plot_numpy(img)
 ```
-
 Now we can apply HoughLines algoritm, which will detect many lines going through the dense regions
 ```{python}
 
@@ -258,6 +255,7 @@ lines = cv2.HoughLinesP(
 Because some of the lines may be perfectly vertical, and we are interested in the slopes which for them is an infinity we erase them
 
 ```{python}
+print(lines)
 valid_lines = lines[~(lines[:, :, 0] == lines[:, :, 2]), :]
 ```
 
@@ -283,6 +281,15 @@ We tried using (slope, intercept) and (center_x, center_y) combinations
 
 
 ```{python}
+#DELEEELTETE
+def get_slope_and_intercept(x1, y1, x2, y2):
+    assert x2 - x1 != 0
+    slope = (y2 - y1) / (x2 - x1)
+    intercept = y1 - slope * x1
+    return slope, intercept
+```
+
+```{python}
 valid_lines_directional = np.apply_along_axis(
     lambda x: np.array([*get_slope_and_intercept(*x)]), axis=1, arr=valid_lines
 )
@@ -295,10 +302,10 @@ valid_lines_centers = np.apply_along_axis(
 
 ```
 
-Normalizing the data
 ```{python}
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(valid_lines_centers)
+# X_scaled = valid_lines_directional
 
 clustering = DBSCAN(eps=0.15, min_samples=16).fit(X_scaled)
 
@@ -326,6 +333,7 @@ for i in range(len(valid_lines)):
     )
 
 plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=clustering.labels_)
+plt.legend()
 plt.show()
 plot_numpy(img_clusters)
 
@@ -349,19 +357,4 @@ img_average_lines = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
 plot_numpy_with_lines(img_average_lines, average_lines)
 ```
 
-
-## Results on the whole dataset
-
-```{python }
-import hough_pipeline
-import regression_pipeline
-from image_processing import preprocess
-from data import load_all_files
-
-for data in load_all_files():
-    img = preprocess(data.to_numpy())
-    plot_numpy(img, title="original")
-    hough_pipeline.detect_velocities(img)    
-    regression_pipeline.detect_velocities(img)
-```
 
