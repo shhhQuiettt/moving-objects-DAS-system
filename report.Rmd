@@ -1,0 +1,6 @@
+# Dupa dupa
+
+```{python}
+print("hi")
+```
+

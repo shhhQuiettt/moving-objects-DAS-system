@@ -18,8 +18,17 @@ in pkgs.mkShell {
       python-pkgs.seaborn
       python-pkgs.scikit-learn
       python-pkgs.pyqt5
+      python-pkgs.virtualenv
     ]))
     pkgs.jupyter
+    (pkgs.rWrapper.override {
+      packages = with pkgs.rPackages; [
+        ggplot2
+        knitr
+        readr
+        reticulate
+      ];
+    })
   ];
 }
 

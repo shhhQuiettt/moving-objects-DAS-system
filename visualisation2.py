@@ -8,24 +8,45 @@ import numpy.typing as npt
 from matplotlib.colors import Normalize
 
 
-def plot_numpy(data: npt.NDArray, title: Optional[str] = None, save: bool = False):
+def plot_numpy(
+    *args: npt.NDArray,
+    title: Optional[str] = None,
+    save: bool = False,
+):
+
+    data = np.concatenate(
+        [
+            img if len(img.shape) == 3 else cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            for img in args
+        ],
+        axis=1,
+    )
+    print(data.shape)
+
+    # cv2.circle(
+    #     data,
+    #     (data.shape[1] // 2, data.shape[0] // 2),
+    #     400,
+    #     (0, 0, 255),
+    #     thickness=-1,
+    # )
     # display data but strech it horizontaly
     # import matplotlib
     # matplotlib.use('Agg')
-    fig = plt.figure(figsize=(12, 16))
+    fig = plt.figure(figsize=(6 * len(args), 8))
 
     ax = plt.axes()
 
     if title:
         plt.title(title)
 
-    if len(data.shape) == 2:
-        ax.imshow(
-            data, vmin=0, vmax=255, aspect="auto", interpolation="none", cmap="gray"
-        )
+    # if len(data.shape) == 2:
+    #     ax.imshow(
+    #         data, vmin=0, vmax=255, aspect="auto", interpolation="none"  # , cmap="gray"
+    #     )
 
-    else:
-        ax.imshow(data, aspect="auto", interpolation="none")
+    # else:
+    ax.imshow(data, aspect="auto", interpolation="none")
     # print("elo")
     # remove axis
     ax.axis("off")

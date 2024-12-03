@@ -16,9 +16,7 @@ DX = 5.106500953873407
 DT = 0.0016
 
 
-def _get_test_files():
-    file_start = "090322"
-    file_end = "090512"
+def _get_test_files(file_start, file_end):
 
     # file_start = "091722"
     # file_end = "091912"
@@ -67,7 +65,20 @@ def _get_test_files():
     return files
 
 
-TEST_FILES = _get_test_files()
+TEST_FILES = (
+    _get_test_files(
+        file_start="090322",
+        file_end="090512",
+    )
+    + _get_test_files(
+        file_start="091822",
+        file_end="092012",
+    )
+    + _get_test_files(
+        file_start="091722",
+        file_end="091912",
+    )
+)
 
 
 def velocity_from_slope(slope: float) -> float:
