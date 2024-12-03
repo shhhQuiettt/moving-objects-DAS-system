@@ -95,7 +95,7 @@ def plot_numpy_with_lines(
         x = np.arange(x_min, x_max)
         y = slope * x + intercept
 
-        y_valid_mask = (y >= y_min) & (y < y_max)
+        y_valid_mask = (y > y_min) & (y < y_max)
         x_valid_mask = (x > x_min) & (x < x_max)
 
         valid_mask = y_valid_mask & x_valid_mask

@@ -10,6 +10,7 @@ from data import velocity_from_slope
 
 
 def get_slope_and_intercept(x1, y1, x2, y2):
+    assert x2 - x1 != 0
     slope = (y2 - y1) / (x2 - x1)
     intercept = y1 - slope * x1
     return slope, intercept

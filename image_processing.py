@@ -26,8 +26,9 @@ def proper_opening(image, kernel=(3, 3)):
     return np.minimum(image, close2)
 
 
-def generate_colors(num_colors: int) -> np.ndarray:
+def generate_colors(num_colors: int) -> npt.NDArray:
     # Generate random RGB colors
+    raise ValueError("Change import to utils")
     hsv_colors = [(i / num_colors, 1.0, 1.0) for i in range(num_colors)]
     rgb_colors = [plt.cm.hsv(h)[:3] for h, _, _ in hsv_colors]
     rgb_colors = (np.array(rgb_colors) * 255).astype(np.uint8)

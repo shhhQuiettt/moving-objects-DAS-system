@@ -2,6 +2,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+from sklearn.cluster import DBSCAN
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import MinMaxScaler
+from utils import generate_colors, mps_to_kmph, get_slope_and_intercept
+from data import load_from_file, DT, DX
+from visualisation import plot_numpy, plot_numpy_with_lines
 ```
 
 # Detecting Moving Objects in DAS Recordings
@@ -15,7 +21,7 @@ In this project, we analyzed Distributed Acoustic Sensing (DAS) data captured as
 
 The task is very difficult, therefore we tested 2 approches. None of these is the best, however, some scenarios are better in one case and some in other.
 
-## Form of the report
+## On the form of the report
 
 First we will introduce the data and methods on a single example. Then we will present the results on the whole dataset.
 
@@ -23,22 +29,20 @@ First we will introduce the data and methods on a single example. Then we will p
 
 Example data file:
 
-```{python}
-from data import load_from_file
-from visualisation import plot_numpy
-
-example_filename = "090322"
-
-data = load_from_file(example_filename)
-
-plot_numpy(data.to_numpy())
-
-```
 The x-axis represent the __spatial position__ on the cable, while the y-axis represents a __given timestamp__. The color intensity represents the __strain rate__ at a given point in time and space. The data is very noisy and contains multiple moving objects, which we aim to detect and track.
 
 Note that the data shape is `python data.shape` and the display streches the image horizontaly
 
+
 ## Preprocessing
+
+```{python}
+
+example_filename = "090332.npy"
+
+img = load_from_file(example_filename).to_numpy()
+
+```
 
 To reduce noise and magnify the data we tried many methods in various combinations. 
 The most fulfilling approach consists of the following steps:
@@ -47,56 +51,47 @@ The most fulfilling approach consists of the following steps:
 1. **Absolute value** - The values can be negative, but we are interested only in the magnitude of the signal, so we can take the absolute value
 
 ```{python}
-    img = np.abs(img)
+img = np.abs(img)
 ```
 
 2. **reject 1% of the data from both sides of the distribution** - As we can see from the plot data contains some outliers, while most of the date lies in a one region
 
 ```{python}
 
-plt.set_title("Data distribution before removing outliers")
+plt.title("Data distribution before removing outliers")
 plt.hist(img.flatten(), bins=100)
 plt.show()
+```
+```{python}
 
 low, high = np.percentile(img, [1, 99])
 img = np.clip(img, low, high)
 
-plt.set_title("Data distribution after removing outliers")
+plt.title("Data distribution after removing outliers")
 plt.hist(img.flatten(), bins=100)
 plt.show()
 ```
-
-
 
 3. **Standardize the data in range 0-255** - To normalize the data for consistent comparison and processing.
 ```{python}
 img = np.around(255 * (img - np.min(img)) / (np.max(img) - np.min(img))).astype(
     np.uint8
 )
-plot_numpy(img, title="Standardized data")
+plot_numpy(img, title="Standarized data")
 ```
-
--Wojtek
-4. **Gaussian blur** - To reduce noise and detail in the data.
-```{python}
-```
-
-5. **Binary conversion** - To simplify the data by converting it to a binary format.
-6. **Opening - morphological operation** - To remove small objects from the foreground and smooth the data.
--Krzyś
-7. **Non-local Means Denoising algorithm** - To reduce noise while preserving important details and textures in the data.
+4. **Non-local Means Denoising algorithm** - We implement fastNlMeansDenoising with agressive parameters to reduce noise 
 ```{python}
 img = cv2.fastNlMeansDenoising(img, templateWindowSize=7, searchWindowSize=21, h=14)
 plot_numpy(img, title="Non-local Means Denoising")
 ```
 
-8. **blur** - We blur the image with a kernel with the greater vertical size, as the data is very narrow in the horizontal dimension.
+5. **blur** - We blur the image with a kernel with the greater vertical size, as the data is very narrow in the horizontal dimension.
 ```{python}
-    img = cv2.blur(img, (3, 41))
+img = cv2.blur(img, (3, 41))
+plot_numpy(img, title="Blurred")
 ```
 
-
-9. **Erosion - morphological operation** - As various signals tend to be close to each other, and we don't need much of a aconnectivity as well as edges details, we perform an erosion operation.
+6. **Erosion - morphological operation** - As various signals tend to be close to each other, and we don't need much of a aconnectivity as well as edges details, we perform an erosion operation.
 
 ```{python }
 img = cv2.morphologyEx(
@@ -115,48 +110,243 @@ plot_numpy(img, title="Binary conversion")
 
 ```
 
+## Main idea
+The main idea behind the two approaches is to detect lines in the data, assuming contant speed of the vehicles
+
+Then, the speed can be calculated from the formula:
+
+```{python}
+def velocity_from_slope(slope: float) -> float:
+    return round(abs(1 / slope) * DX / DT, 2)
+```
+
+The slope is inverted, because we use the x-axis as the spatial dimension and the y-axis as the time dimension. The velocity is calculated in meters per second.
+
 
 
 ## FIRST APPROACH
+
+The idea of our first approach was to cluster the values from the different data sources. Then we would apply linear regression within the clusters, on the (x,y) cooridinates of non-zero values. The slope of the regression line would give us the velocity of the vehicle.
 
 ### Algorithm
 <!-- import image -->
 ![flow chart](flow_chart.png)
 
 
-To approach this challenge, we analyzed the data and applied the following phase of the preprocessing:
-1. **Absolute value** - To ensure all data points are non-negative.
-2. **reject 1% of the data from both sides of the distribution** - To remove outliers and improve the robustness of the analysis.
-3. **Standardize the data in range 0-255** - To normalize the data for consistent comparison and processing.
--Wojtek
-4. **Gaussian blur** - To reduce noise and detail in the data.
-5. **Binary conversion** - To simplify the data by converting it to a binary format.
-6. **Opening - morphological operation** - To remove small objects from the foreground and smooth the data.
--Krzyś
-7. **Non-local Means Denoising algorithm** - To reduce noise while preserving important details and textures in the data.
-8. **blur** - To smooth the data and reduce high-frequency noise.
-9. **Erosion - morphological operation** - To remove small noise and detach objects that are close to each other.
-10. **Binary conversion** - To simplify the data by converting it to a binary format.
+### 1. Clustering
+Because of the nature of the data and the fact that we  want to cluster datapoints by density rather than closeness (as in for example `KMeans`) we chose the `DBSCAN` algorithm. It does not require specifying the number of clusters in advance, making it a versatile choice for exploratory data analysis.
 
-Analazying the data, we can conlude that there are not just one line but more, therefore we had to introduce the algorithm, which would separate the data to different vehicles. To obtain that we applied **DBSCAN** clustering algorithm.
+_DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a clustering algorithm that groups together points that are closely packed together, marking as outliers points that lie alone in low-density regions. It requires two parameters: **eps** (the maximum distance between two points to be considered neighbors) and **min_samples** (the minimum number of points required to form a dense region). DBSCAN is particularly effective for <u>discovering clusters of arbitrary shape</u> and handling noise in the data._
 
-- DBSCAN (Density-Based Spatial Clustering of Applications with Noise) is a clustering algorithm that groups together points that are closely packed together, marking as outliers points that lie alone in low-density regions. It requires two parameters: **eps** (the maximum distance between two points to be considered neighbors) and **min_samples** (the minimum number of points required to form a dense region). DBSCAN is particularly effective for <u>discovering clusters of arbitrary shape</u> and handling noise in the data. It does not require specifying the number of clusters in advance, making it a versatile choice for exploratory data analysis.
+```{python}
+X = np.nonzero(img)
+X = np.vstack(X).T
 
-Calculating the velocity of the vehicle, it is required to have approximation of the distance and time. The data gives us the time, However, to discover the distance we had to perform other techniques. Observing the images, we noticed linearity of the paths therefore we tested Linear regression algorithm to detect the papth from the data.
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(X)
 
-**Linear regression** is a statistical method used to model the relationship between a dependent variable and one or more independent variables. The goal is to find the best-fitting straight line (called the regression line) through the data points that minimizes the sum of the squared differences between the observed values and the values predicted by the line. This method is widely used for predictive analysis and to understand the strength and nature of relationships between variables.
+clustering = DBSCAN(eps=0.08, min_samples=300).fit(X_scaled)
 
-Here are the results of the first approach:
+no_of_clusters = int(np.max(clustering.labels_) + 1)
+```
 
-## SECOND APPROACH
-preprocessing
+The algorithm detected `python no_of_clusters` clusters in this exemplary data.
 
 
-In the second method, we approached the issue from the other side. First, we generated lines using Houghline and then, we clusterd them.
+```{python}
+colors = generate_colors(no_of_clusters)
+
+colored_clusters = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+for cluster_id in range(no_of_clusters):
+    # Indices of the points in the cluster
+    idx = X[clustering.labels_ == cluster_id, :]
+
+    colored_clusters[idx.T[0], idx.T[1], :] = colors[cluster_id]
+
+plot_numpy(colored_clusters, title="Clustered data")
+```
+
+
+Once we have separated clusters, we can apply _linear regression_ to each of them to estimate the velocity of the moving object.
+
+As some clusters are separated noise, we discard these with R2 < `python 0.5`.
+
+```{python}
+lines = []
+velocities = []
+for cluster_id in range(no_of_clusters):
+    idx = X[clustering.labels_ == cluster_id, :]
+    x_coords = idx[:, 1].reshape(-1, 1)
+    y_coords = idx[:, 0]
+
+    model = LinearRegression()
+    model.fit(x_coords, y_coords)
+
+    slope = model.coef_[0]
+    intercept = model.intercept_
+
+    x_start = np.min(x_coords)
+    x_end = np.max(x_coords)
+
+    r2 = model.score(x_coords, y_coords)
+    print(f"R2: {r2}")
+
+    # Discarding objects with R2 < 0.6
+    if r2 < 0.5:
+        print(f"Discarding object with R2 < 0.5 ({r2})")
+        continue
+
+    velocity = velocity_from_slope(slope)
+    print(f"Detected velocity: {velocity} m/s ({''})")
+    velocities.append(velocity)
+
+    lines.append((slope, intercept, x_start, x_end))
+
+plot_numpy_with_lines(img, lines)
+```
+
+## Hough Lines 
+In the second method, we approached the issue from a different angle. First, we generated lines using Houghline and then, we clusterd them.
 
 **The Hough Line Transform** is a feature extraction technique used in image analysis and computer vision to detect straight lines in an image. It works by transforming points in the image space to the parameter space, where each point in the image space corresponds to a sinusoidal curve in the parameter space. Lines in the image space are identified by finding intersections of these curves in the parameter space. This method is robust to noise and can detect lines even if they are broken or partially obscured. It is commonly used in applications like lane detection in autonomous driving and shape analysis.
 
 To cluster lines we used the same algorithm like in the first method - **DBSCAN**.
 
-Here are the results of the second method:
+### Implementation
+
+```{python echo=FALSE}
+aspect_ratio = 12 / 16
+h, w = img.shape
+```
+
+Because our data is very narrow (`{python print(f"{w} x {h}")}`) and the lines are visible on the streched image, it makes sense to resize the date, so the `HoughLines` algorithm has more freedom in term of slope selection
+```{python}
+aspect_ratio = 12 / 16
+h, w = img.shape
+
+new_w = int(aspect_ratio * h)
+
+img = cv2.resize(img, (new_w, h), interpolation=cv2.INTER_NEAREST)
+
+plot_numpy(img)
+```
+Now we can apply HoughLines algoritm, which will detect many lines going through the dense regions
+```{python}
+
+img_before = img.copy()
+
+lines = cv2.HoughLinesP(
+    img,  # Input edge image
+    1,  # Distance resolution in pixels
+    np.pi / 180,  # Angle resolution in radians
+    threshold=500,  # Min number of votes for valid line
+    minLineLength=1500,  # Min allowed length of line
+    maxLineGap=400,  # Max allowed gap between line for joining them
+)
+
+
+```
+Because some of the lines may be perfectly vertical, and we are interested in the slopes which for them is an infinity we erase them
+```{python}
+valid_lines = lines[~(lines[:, :, 0] == lines[:, :, 2]), :]
+```
+
+Now we can plot the lines
+```{python}
+img_lines = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+color_palette = generate_colors(len(valid_lines))
+for i in range(len(valid_lines)):
+    cv2.line(
+        img_lines,
+        (valid_lines[i, 0], valid_lines[i, 1]),
+        (valid_lines[i, 2], valid_lines[i, 3]),
+        [int(c) for c in color_palette[i]],
+        1,
+        cv2.LINE_AA,
+    )
+plot_numpy(img_lines)
+```
+
+We now have to separate the line clusters and aggregate them.
+
+We tried using (slope, intercept) and (center_x, center_y) combinations
+
+
+```{python}
+#DELEEELTETE
+def get_slope_and_intercept(x1, y1, x2, y2):
+    assert x2 - x1 != 0
+    slope = (y2 - y1) / (x2 - x1)
+    intercept = y1 - slope * x1
+    return slope, intercept
+```
+
+```{python}
+valid_lines_directional = np.apply_along_axis(
+    lambda x: np.array([*get_slope_and_intercept(*x)]), axis=1, arr=valid_lines
+)
+
+valid_lines_centers = np.apply_along_axis(
+    lambda x: np.array([(x[0] + x[2]) / 2, (x[1] + x[3]) / 2]),
+    axis=1,
+    arr=valid_lines,
+)
+
+```
+
+```{python}
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(valid_lines_centers)
+# X_scaled = valid_lines_directional
+
+clustering = DBSCAN(eps=0.15, min_samples=16).fit(X_scaled)
+
+
+no_of_clusters = np.max(clustering.labels_) + 1
+
+```
+The `DBSCAN` algorithm has in-built outliers detection, so we ommit lines marked as cluster `-1` (`python sklearn` implementation)
+
+
+``` {python}
+img_clusters = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
+color_palette = generate_colors(no_of_clusters)
+line_colors = np.apply_along_axis(lambda x: color_palette[x],  0, clustering.labels_)
+line_colors[ clustering.labels_ == -1 ] = [0,0,255]
+
+for i in range(len(valid_lines)):
+    cv2.line(
+        img_clusters,
+        (valid_lines[i, 0], valid_lines[i, 1]),
+        (valid_lines[i, 2], valid_lines[i, 3]),
+        [int(c) for c in line_colors[i]],
+        1,
+        cv2.LINE_AA,
+    )
+
+plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=clustering.labels_)
+plt.legend()
+plt.show()
+plot_numpy(img_clusters)
+
+```
+```{python}
+
+
+average_lines = []
+velocities = []
+for cluster_id in range(no_of_clusters):
+    average_line = np.mean(valid_lines_directional[clustering.labels_ == cluster_id], axis=0)
+    x_min = 0
+    x_max = new_w
+    average_lines.append([*average_line, x_min, x_max])
+
+    slope = average_line[0]
+    velocities.append(velocity_from_slope(slope))
+
+img_average_lines = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
+
+plot_numpy_with_lines(img_average_lines, average_lines)
+```
+
 

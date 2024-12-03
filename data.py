@@ -10,7 +10,7 @@ import numpy as np
 import glob
 
 
-DATA_FOLDER = "20240507/"
+DATA_FOLDER = "input_data/"
 
 DX = 5.106500953873407
 DT = 0.0016
