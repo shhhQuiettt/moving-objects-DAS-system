@@ -57,7 +57,7 @@ def preprocess(img):
         np.uint8
     )
     # print(high, np.max(data))
-    print(type(img))
+
     img = cv2.fastNlMeansDenoising(img, templateWindowSize=7, searchWindowSize=21, h=14)
 
     img = cv2.blur(img, (3, 41))

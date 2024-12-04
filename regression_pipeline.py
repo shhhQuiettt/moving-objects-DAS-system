@@ -13,7 +13,7 @@ from sklearn.linear_model import LinearRegression
 from utils import put_velocity_on_image
 
 
-def detect_velocities(img: npt.NDArray, original_img: npt.NDArray) -> list[float]:
+def detect_velocities(img: npt.NDArray, original_img: npt.NDArray, index: int = 0, save: bool = False) -> list[float]:
     X = np.nonzero(img)
     X = np.vstack(X).T
 
@@ -63,9 +63,10 @@ def detect_velocities(img: npt.NDArray, original_img: npt.NDArray) -> list[float
 
         lines.append((slope, intercept, x_start, x_end))
 
-    del clustering
-    plot_numpy(img_clusters, title="Detected clusters")
-    plot_numpy_with_lines(original_img, lines, title="Detected lines (Regression)")
+    del clustering, scaler, X_scaled, X
+
+    plot_numpy(img_clusters, title="Detected clusters_" + f"{index:02}", save=save)
+    plot_numpy_with_lines(original_img, lines, title="Detected lines Regression_" + f"{index:02}", save=save)
 
     for velocity in velocities:
         print(f"Detected velocity: {velocity} m/s)")

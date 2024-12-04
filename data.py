@@ -120,6 +120,9 @@ def load_from_file(filename: str) -> pd.DataFrame:
 def load_all_files() -> Iterator[pd.DataFrame]:
     yield from (load_from_file(filename) for filename in TEST_FILES)
 
+def get_names():
+    return TEST_FILES
+
 
 def prepocess(data: npt.NDArray) -> npt.NDArray:
     raise ValueError("Delete this")

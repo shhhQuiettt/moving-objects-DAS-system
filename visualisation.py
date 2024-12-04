@@ -16,7 +16,8 @@ def plot_numpy(
 
     data = np.concatenate(
         [
-            img if len(img.shape) == 3 else cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            img if len(img.shape) == 3 else cv2.cvtColor(
+                img, cv2.COLOR_GRAY2RGB)
             for img in args
         ],
         axis=1,
@@ -26,7 +27,7 @@ def plot_numpy(
     ax = plt.axes()
 
     if title:
-        plt.title(title)
+        plt.title(title[:len(title)-3])
 
     plt.ylabel("Time [s]")
     plt.xlabel("Position [m]")
@@ -54,7 +55,10 @@ def plot_numpy(
 
 
 def plot_numpy_with_lines(
-    data: npt.NDArray, lines: list[tuple[float, float, int, int]], title: str = ""
+    data: npt.NDArray, 
+    lines: list[tuple[float, float, int, int]], 
+    title: str = "", 
+    save: bool = False,
 ):
     """
     lines: list of (slope, intercept) tuples
@@ -66,7 +70,7 @@ def plot_numpy_with_lines(
     ax = plt.axes()
 
     if title:
-        plt.title(title)
+        plt.title(title[:len(title)-3])
 
     plt.ylabel("Time [s]")
     plt.xlabel("Position [m]")
@@ -101,6 +105,10 @@ def plot_numpy_with_lines(
         x = x[valid_mask]
         y = y[valid_mask]
 
-        ax.plot(x, y, color="red")
+        ax.plot(x, y, color="red", linewidth=10)
 
-    plt.show()
+    if save:
+        plt.savefig("./image/" + title + ".png")
+        plt.close(fig)
+    else:
+        plt.show()

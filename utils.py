@@ -5,7 +5,7 @@ import numpy.typing as npt
 
 
 def put_velocity_on_image(
-    img: npt.NDArray, velocity, line, color=(255, 255, 0), org=None
+    img: npt.NDArray, velocity, line, color=(255, 0, 0), org=None
 ):
     org = (int((line[0] + line[2]) / 2), int((line[1] + line[3]) / 2))
 
@@ -15,9 +15,9 @@ def put_velocity_on_image(
         org,
         cv2.FONT_HERSHEY_SIMPLEX,
         # font_scale,
-        5,
+        10,
         color,
-        4,
+        40,
         cv2.LINE_AA,
     )
     return img

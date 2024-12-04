@@ -17,7 +17,7 @@ def get_slope_and_intercept(x1, y1, x2, y2):
     return slope, intercept
 
 
-def detect_velocities(img: npt.NDArray, original_img: npt.NDArray):
+def detect_velocities(img: npt.NDArray, original_img: npt.NDArray, index: int = 0, save: bool = False):
     """
     img: npt.NDArray
         Preprocessed image, ready for line detection
@@ -30,7 +30,8 @@ def detect_velocities(img: npt.NDArray, original_img: npt.NDArray):
     new_w = int(aspect_ratio * h)
 
     img = cv2.resize(img, (new_w, h), interpolation=cv2.INTER_NEAREST)
-    original_img = cv2.resize(original_img, (new_w, h), interpolation=cv2.INTER_NEAREST)
+    original_img = cv2.resize(original_img, (new_w, h),
+                              interpolation=cv2.INTER_NEAREST)
 
     img_before = img.copy()
 
@@ -87,21 +88,23 @@ def detect_velocities(img: npt.NDArray, original_img: npt.NDArray):
 
     img_clusters = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
     color_palette = generate_colors(no_of_clusters)
-    line_colors = np.apply_along_axis(lambda x: color_palette[x], 0, clustering.labels_)
+    line_colors = np.apply_along_axis(
+        lambda x: color_palette[x], 0, clustering.labels_)
     for i in range(len(valid_lines)):
         cv2.line(
             img_clusters,
             (valid_lines[i, 0], valid_lines[i, 1]),
             (valid_lines[i, 2], valid_lines[i, 3]),
             [int(c) for c in line_colors[i]],
-            1,
+            10,
             cv2.LINE_AA,
         )
 
     average_lines = []
     velocities = []
     for cluster_id in range(no_of_clusters):
-        average_line = np.mean(valid_lines[clustering.labels_ == cluster_id], axis=0)
+        average_line = np.mean(
+            valid_lines[clustering.labels_ == cluster_id], axis=0)
         average_lines.append(average_line)
 
         slope, _ = get_slope_and_intercept(*average_line)
@@ -116,12 +119,14 @@ def detect_velocities(img: npt.NDArray, original_img: npt.NDArray):
             (int(average_line[0]), int(average_line[1])),
             (int(average_line[2]), int(average_line[3])),
             (0, 255, 0),
-            10,
+            40,
             cv2.LINE_AA,
         )
         put_velocity_on_image(img_average_lines, velocities[i], average_line)
 
-    del clustering
+    del clustering, scaler, X_scaled, valid_lines, valid_lines_centers, valid_lines_directional
 
-    plot_numpy(img_before, img_lines, img_clusters, title="Intermidiate steps")
-    plot_numpy(img_average_lines, title="Final results (Hough lines)")
+    plot_numpy(img_before, img_lines, img_clusters,
+               title="Intermidiate steps_" + f"{index:02}", save=save)
+    plot_numpy(img_average_lines,
+               title="Final results Hough lines_" + f"{index:02}", save=save)
