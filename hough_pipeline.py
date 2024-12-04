@@ -16,6 +16,13 @@ def get_slope_and_intercept(x1, y1, x2, y2):
     return slope, intercept
 
 
+def put_velocity_on_image(img: npt.NDArray, velocity, line, color=(255, 0, 0)):
+    org = (int((line[0] + line[2]) / 2), int((line[1] + line[3]) / 2))
+    cv2.putText(img, f"Velocity: {velocity:.2f} m/s", org,
+                cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2, cv2.LINE_AA)
+    return img
+
+
 def detect_velocities(img: npt.NDArray):
     """
     img: npt.NDArray
@@ -86,7 +93,8 @@ def detect_velocities(img: npt.NDArray):
 
     img_clusters = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
     color_palette = generate_colors(no_of_clusters)
-    line_colors = np.apply_along_axis(lambda x: color_palette[x], 0, clustering.labels_)
+    line_colors = np.apply_along_axis(
+        lambda x: color_palette[x], 0, clustering.labels_)
     for i in range(len(valid_lines)):
         cv2.line(
             img_clusters,
@@ -100,7 +108,8 @@ def detect_velocities(img: npt.NDArray):
     average_lines = []
     velocities = []
     for cluster_id in range(no_of_clusters):
-        average_line = np.mean(valid_lines[clustering.labels_ == cluster_id], axis=0)
+        average_line = np.mean(
+            valid_lines[clustering.labels_ == cluster_id], axis=0)
         average_lines.append(average_line)
 
         slope, _ = get_slope_and_intercept(*average_line)

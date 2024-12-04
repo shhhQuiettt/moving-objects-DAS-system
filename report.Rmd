@@ -42,6 +42,8 @@ Note that the data shape is `python data.shape` and the display streches the ima
 
 ## Preprocessing
 
+![preprocessing_flow_chart](preprocessing.png)
+
 ```{python}
 
 example_filename = "090332.npy"
@@ -136,10 +138,7 @@ The slope is inverted, because we use the x-axis as the spatial dimension and th
 
 The idea of our first approach was to cluster the values from the different data sources. Then we would apply linear regression within the clusters, on the (x,y) cooridinates of non-zero values. The slope of the regression line would give us the velocity of the vehicle.
 
-### Algorithm
-<!-- import image -->
-![flow chart](flow_chart.png)
-
+![method_flow_chart](method_1.png)
 
 ### 1. Clustering
 Because of the nature of the data and the fact that we  want to cluster datapoints by density rather than closeness (as in for example `KMeans`) we chose the `DBSCAN` algorithm. It does not require specifying the number of clusters in advance, making it a versatile choice for exploratory data analysis.
@@ -174,7 +173,7 @@ for cluster_id in range(no_of_clusters):
 plot_numpy(colored_clusters, title="Clustered data")
 ```
 
-
+### 2. Linear Regression
 Once we have separated clusters, we can apply _linear regression_ to each of them to estimate the velocity of the moving object.
 
 As some clusters are separated noise, we discard these with R2 < `python 0.5`.
@@ -213,8 +212,12 @@ for cluster_id in range(no_of_clusters):
 plot_numpy_with_lines(img, lines)
 ```
 
-## Hough Lines 
+## SECOND APPROACH
 In the second method, we approached the issue from a different angle. First, we generated lines using Houghline and then, we clusterd them.
+
+![method_2_flow_chart](method_2.png)
+
+### 1. Hough Lines 
 
 **The Hough Line Transform** is a feature extraction technique used in image analysis and computer vision to detect straight lines in an image. It works by transforming points in the image space to the parameter space, where each point in the image space corresponds to a sinusoidal curve in the parameter space. Lines in the image space are identified by finding intersections of these curves in the parameter space. This method is robust to noise and can detect lines even if they are broken or partially obscured. It is commonly used in applications like lane detection in autonomous driving and shape analysis.
 
@@ -276,6 +279,8 @@ for i in range(len(valid_lines)):
     )
 plot_numpy(img_lines)
 ```
+
+### 2. Clustering
 
 We now have to separate the line clusters and aggregate them.
 
