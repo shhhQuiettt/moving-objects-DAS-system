@@ -1,6 +1,26 @@
 import matplotlib.pyplot as plt
+import cv2
 import numpy as np
 import numpy.typing as npt
+
+
+def put_velocity_on_image(
+    img: npt.NDArray, velocity, line, color=(255, 255, 0), org=None
+):
+    org = (int((line[0] + line[2]) / 2), int((line[1] + line[3]) / 2))
+
+    cv2.putText(
+        img,
+        f"{velocity:.2f} m/s",
+        org,
+        cv2.FONT_HERSHEY_SIMPLEX,
+        # font_scale,
+        5,
+        color,
+        4,
+        cv2.LINE_AA,
+    )
+    return img
 
 
 def get_slope_and_intercept(x1, y1, x2, y2):

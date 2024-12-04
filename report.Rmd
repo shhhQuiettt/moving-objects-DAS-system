@@ -64,13 +64,13 @@ img = np.abs(img)
 
 2. **Clip to the 99% percentile of intensity distribution** - As we can see from the plot, data contains outliers, while most of the data lies in a one region
 
-```{python }
+```{python results='hide'}
 plt.title("Data distribution before removing outliers")
 plt.hist(img.flatten(), bins=100)
 plt.show()
 ```
 
-```{python }
+```{python results="hide"}
 high = np.percentile(img, 99)
 img = np.minimum(img, high)
 
@@ -176,7 +176,7 @@ plot_numpy(colored_clusters, title="Clustered data")
 ### 2. Linear Regression
 Once we have separated clusters, we can apply _linear regression_ to each of them to estimate the velocity of the moving object.
 
-As some clusters are separated noise, we discard these with R2 < `python 0.5`.
+As some clusters are separated noise, we discard these with R2 < `0.3`.
 
 ```{python}
 lines = []
@@ -198,9 +198,8 @@ for cluster_id in range(no_of_clusters):
     r2 = model.score(x_coords, y_coords)
     print(f"R2: {r2}")
 
-    # Discarding objects with R2 < 0.6
-    if r2 < 0.5:
-        print(f"Discarding object with R2 < 0.5 ({r2})")
+    if r2 < 0.3:
+        print(f"Discarding object with R2 < 0.3 ({r2})")
         continue
 
     velocity = velocity_from_slope(slope)
@@ -209,7 +208,7 @@ for cluster_id in range(no_of_clusters):
 
     lines.append((slope, intercept, x_start, x_end))
 
-plot_numpy_with_lines(img, lines)
+plot_numpy_with_lines(img, lines, title="Detected velocities")
 ```
 
 ## SECOND APPROACH
@@ -360,13 +359,21 @@ plot_numpy_with_lines(img_average_lines, average_lines)
 ```{python }
 import hough_pipeline
 import regression_pipeline
-from image_processing import preprocess
+from image_processing import preprocess, initial_preprocess
 from data import load_all_files
 
-for data in load_all_files():
-    img = preprocess(data.to_numpy())
-    plot_numpy(img, title="original")
-    hough_pipeline.detect_velocities(img)    
-    regression_pipeline.detect_velocities(img)
+files_generator = load_all_files()
+
+i = 0
+for file in files_generator:
+    i+=1
+    original = initial_preprocess(file.to_numpy())
+    if i == 10:
+        break
+    
+    img = preprocess(file.to_numpy())
+    plot_numpy(original, title="original")
+    hough_pipeline.detect_velocities(img, original)
+    regression_pipeline.detect_velocities(img,  original)
 ```
 

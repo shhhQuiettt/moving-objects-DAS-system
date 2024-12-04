@@ -7,6 +7,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import MinMaxScaler
 from visualisation import plot_numpy
 from data import velocity_from_slope
+from utils import put_velocity_on_image
 
 
 def get_slope_and_intercept(x1, y1, x2, y2):
@@ -16,14 +17,7 @@ def get_slope_and_intercept(x1, y1, x2, y2):
     return slope, intercept
 
 
-def put_velocity_on_image(img: npt.NDArray, velocity, line, color=(255, 0, 0)):
-    org = (int((line[0] + line[2]) / 2), int((line[1] + line[3]) / 2))
-    cv2.putText(img, f"Velocity: {velocity:.2f} m/s", org,
-                cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2, cv2.LINE_AA)
-    return img
-
-
-def detect_velocities(img: npt.NDArray):
+def detect_velocities(img: npt.NDArray, original_img: npt.NDArray):
     """
     img: npt.NDArray
         Preprocessed image, ready for line detection
@@ -36,6 +30,8 @@ def detect_velocities(img: npt.NDArray):
     new_w = int(aspect_ratio * h)
 
     img = cv2.resize(img, (new_w, h), interpolation=cv2.INTER_NEAREST)
+    original_img = cv2.resize(original_img, (new_w, h), interpolation=cv2.INTER_NEAREST)
+
     img_before = img.copy()
 
     lines = cv2.HoughLinesP(
@@ -79,22 +75,19 @@ def detect_velocities(img: npt.NDArray):
         arr=valid_lines,
     )
 
-    print("Validafsd", valid_lines_directional.shape)
-
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(valid_lines_centers)
     # X_scaled = valid_lines_directional
 
     clustering = DBSCAN(eps=0.15, min_samples=16).fit(X_scaled)
 
-    plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=clustering.labels_)
+    # plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=clustering.labels_)
 
     no_of_clusters = np.max(clustering.labels_) + 1
 
     img_clusters = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
     color_palette = generate_colors(no_of_clusters)
-    line_colors = np.apply_along_axis(
-        lambda x: color_palette[x], 0, clustering.labels_)
+    line_colors = np.apply_along_axis(lambda x: color_palette[x], 0, clustering.labels_)
     for i in range(len(valid_lines)):
         cv2.line(
             img_clusters,
@@ -108,22 +101,27 @@ def detect_velocities(img: npt.NDArray):
     average_lines = []
     velocities = []
     for cluster_id in range(no_of_clusters):
-        average_line = np.mean(
-            valid_lines[clustering.labels_ == cluster_id], axis=0)
+        average_line = np.mean(valid_lines[clustering.labels_ == cluster_id], axis=0)
         average_lines.append(average_line)
 
         slope, _ = get_slope_and_intercept(*average_line)
-        velocities.append(velocity_from_slope(slope))
+        velocity = velocity_from_slope(slope) * w / new_w
+        print(f"Detected velocity: {velocity} m/s")
+        velocities.append(velocity)
 
-    img_average_lines = cv2.cvtColor(img_before, cv2.COLOR_GRAY2RGB)
-    for i in average_lines:
+    img_average_lines = cv2.cvtColor(original_img, cv2.COLOR_GRAY2RGB)
+    for i, average_line in enumerate(average_lines):
         cv2.line(
             img_average_lines,
-            (int(i[0]), int(i[1])),
-            (int(i[2]), int(i[3])),
+            (int(average_line[0]), int(average_line[1])),
+            (int(average_line[2]), int(average_line[3])),
             (0, 255, 0),
-            3,
+            10,
             cv2.LINE_AA,
         )
+        put_velocity_on_image(img_average_lines, velocities[i], average_line)
 
-    plot_numpy(img_before, img_lines, img_clusters, img_average_lines)
+    del clustering
+
+    plot_numpy(img_before, img_lines, img_clusters, title="Intermidiate steps")
+    plot_numpy(img_average_lines, title="Final results (Hough lines)")

@@ -54,7 +54,7 @@ def plot_numpy(
 
 
 def plot_numpy_with_lines(
-    data: npt.NDArray, lines: list[tuple[float, float, int, int]]
+    data: npt.NDArray, lines: list[tuple[float, float, int, int]], title: str = ""
 ):
     """
     lines: list of (slope, intercept) tuples
@@ -64,6 +64,9 @@ def plot_numpy_with_lines(
     fig = plt.figure(figsize=(12, 16))
 
     ax = plt.axes()
+
+    if title:
+        plt.title(title)
 
     plt.ylabel("Time [s]")
     plt.xlabel("Position [m]")

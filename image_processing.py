@@ -36,6 +36,18 @@ def generate_colors(num_colors: int) -> npt.NDArray:
     return rgb_colors
 
 
+def initial_preprocess(img):
+    img = np.abs(img)
+    high = np.percentile(img, 99)
+    img = np.minimum(img, high)
+
+    img = np.around(255 * (img - np.min(img)) / (np.max(img) - np.min(img))).astype(
+        np.uint8
+    )
+    return img
+    # print(high, np.max(data))
+
+
 def preprocess(img):
     img = np.abs(img)
     high = np.percentile(img, 99)

@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 from visualisation import plot_numpy, plot_numpy_with_lines
 import pandas as pd
 import cv2
@@ -9,52 +10,10 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LinearRegression
 
+from utils import put_velocity_on_image
 
-def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
-    img = data.to_numpy()
 
-    # Preparing the data to easier work with it
-    img = prepocess(img)
-
-    if verbose:
-        plot_numpy(img, title="Original image")
-
-    # img = frequency_lowpass(img, 0.25)
-    # if verbose:
-    #     plot_numpy(img, title="Low-pass filtered image")
-
-    img = cv2.fastNlMeansDenoising(img, templateWindowSize=7, searchWindowSize=21, h=14)
-    # if verbose:
-    #     plot_numpy(img, title="Denoised image")
-
-    img = cv2.blur(img, (3, 41))
-    # img = cv2.GaussianBlur(img, (3, 3), 0)
-    # if verbose:
-    #     plot_numpy(img, title="Blurred image")
-
-    img = cv2.morphologyEx(
-        img,
-        cv2.MORPH_ERODE,
-        cv2.getStructuringElement(cv2.MORPH_RECT, (3, 9)),
-        iterations=1,
-    )
-
-    _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    if verbose:
-        plot_numpy(img, title="Thresholded image")
-
-    # img = cv2.morphologyEx(
-    #     img,
-    #     cv2.MORPH_OPEN,
-    #     cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)),
-    #     iterations=1,
-    # )
-
-    # if verbose:
-    #     plot_numpy(img, title="Opened image")
-
-    # img = cv2.resize(img, (w, h), interpolation=cv2.INTER_NEAREST)
-
+def detect_velocities(img: npt.NDArray, original_img: npt.NDArray) -> list[float]:
     X = np.nonzero(img)
     X = np.vstack(X).T
 
@@ -67,16 +26,12 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
 
     colors = generate_colors(no_of_clusters)
 
-    if verbose:
-        colored_clusters = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        for cluster_id in range(no_of_clusters):
-            # Indices of the points in the cluster
-            idx = X[clustering.labels_ == cluster_id, :]
+    img_clusters = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    for cluster_id in range(no_of_clusters):
+        idx = X[clustering.labels_ == cluster_id, :]
 
-            # Coloring the points
-            colored_clusters[idx.T[0], idx.T[1], :] = colors[cluster_id]
-
-        plot_numpy(colored_clusters, title="Clusters")
+        # Coloring the points
+        img_clusters[idx.T[0], idx.T[1], :] = colors[cluster_id]
 
     # Detecting the lines
     lines = []
@@ -85,6 +40,8 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
         idx = X[clustering.labels_ == cluster_id, :]
         x_coords = idx[:, 1].reshape(-1, 1)
         y_coords = idx[:, 0]
+
+        cluster_center = np.mean(idx, axis=0).astype(np.int32)
 
         model = LinearRegression()
         model.fit(x_coords, y_coords)
@@ -97,21 +54,18 @@ def detect_velocities(data: pd.DataFrame, verbose=True) -> list[float]:
 
         r2 = model.score(x_coords, y_coords)
 
-        # Discarding objects with R2 < 0.6
-        if r2 < 0.5:
-            if verbose:
-                print(f"Discarded cluster {cluster_id} with R2={r2} (<0.5)")
+        # Discarding objects with R2 < 0.3
+        if r2 < 0.3:
             continue
 
         velocity = velocity_from_slope(slope)
-        if verbose:
-            print(f"Detected velocity: {velocity} m/s ({ mps_to_kmph(velocity) } km/h)")
-            print()
         velocities.append(velocity)
 
         lines.append((slope, intercept, x_start, x_end))
 
-    if verbose:
-        plot_numpy_with_lines(img, lines)
+    del clustering
+    plot_numpy(img_clusters, title="Detected clusters")
+    plot_numpy_with_lines(original_img, lines, title="Detected lines (Regression)")
 
-    # return velocities
+    for velocity in velocities:
+        print(f"Detected velocity: {velocity} m/s)")
