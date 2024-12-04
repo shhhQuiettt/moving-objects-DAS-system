@@ -11,10 +11,8 @@ files_names = get_names()
 
 i = 0
 for file in files_generator:
-    if i == 5:
-        break
-    i+=1
     print(f"Processing file {files_names[i]}")
+    i+=1
     original = initial_preprocess(file.to_numpy())
     img = preprocess(file.to_numpy())
     plot_numpy(original, title="original_"+ f"{i:02}", save=True)
