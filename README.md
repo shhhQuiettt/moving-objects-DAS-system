@@ -13,6 +13,8 @@ title: "DAS Traffic Analysis"
 ## Introduction
 In this project, we analyzed Distributed Acoustic Sensing (DAS) data captured as a 2D numpy matrix, representing strain rates along a fiber optic cable installed on Jana Pawła II street. The data reflects the vibrations caused by passing trams, trucks, and cars. Using image processing and signal analysis techniques, we identified vehicle, tracked their movement, and estimated their velocities, providing valuable insights into traffic patterns on this busy street.
 
+![Before After](report_files/before_after.png)
+
 The task is very difficult, therefore we tested 2 approches. None of these is the best, however, some scenarios are better in one case and some in other.
 
 ## On the form of the report
